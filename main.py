@@ -60,11 +60,11 @@ def convert_to_tabular_structure():
     df.to_csv('top seasonal anime .csv', index=False, encoding='utf-8')
 
 
-#if __name__=='__main__':
-    #while True:  
+if __name__=='__main__': 
+    while True:  
         curate_anime_cards()
-        #convert_to_tabular_structure()
-        #time_wait=10 # change wait time as you want
+        convert_to_tabular_structure()
+        time_wait=10 # change wait time as you want
         print(f"waiting for {time_wait} minutes")
         time.sleep(time_wait*60)
 
