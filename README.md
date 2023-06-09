@@ -2,6 +2,12 @@
 
 This is a web scraping project that utilizes the *BeautifulSoup* library to scrape data from the "MyAnimeList" website. It allows you to extract information about anime titles, synopsis, genres, release date and more, directly from the seasonal anime listings on My Anime List.
 
+## About BeautifulSoup
+
+BeautifulSoup is a Python library that makes it easy to scrape information from web pages. It provides a simple and intuitive way to navigate, search, and manipulate HTML and XML documents. In this project, we use BeautifulSoup to extract data from the HTML structure of MyAnimeList web page.
+
+For more information about BeautifulSoup, you can refer to the official documentation: [BeautifulSoup Documentation](https://www.crummy.com/software/BeautifulSoup/bs4/doc/)
+
 ## Installation and Prerequisites
 
 *Python 3.x*: This project requires Python to be installed on your system. You can download it from the official Python website (https://www.python.org/downloads/).
