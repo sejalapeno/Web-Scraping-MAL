@@ -25,12 +25,16 @@ To start using the web scraper, follow the steps below:
 
 1. Clone this repository or download the source code as a ZIP file and extract it to a directory of your choice.
 
-2. Open a terminal or command prompt and navigate to the project directory.
+2. Open a terminal or command prompt and navigate to the project directory. Install streamlit.
+   ```shell
+   pip install streamlit
+   
+   ```
 
-3. Open the ```main.py``` file in a text editor of your choice.
-4. Run the scraper by executing the following command in the terminal or command prompt:
+4. Open the ```main.py``` file in a text editor of your choice.
+5. Run the scraper by executing the following command in the terminal or command prompt:
 ```shell
-   python main.py
+   streamlit run main.py
 ```
 5. The script will start scraping the top seasonal anime on MyAnimeList and display the extracted information in the console.
 
