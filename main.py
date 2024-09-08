@@ -1,71 +1,79 @@
-from bs4 import BeautifulSoup
+import streamlit as st
 import requests
+from bs4 import BeautifulSoup
 import pandas as pd
-import time
 
-curated_info=[]
+curated_info = []
+
 def curate_anime_cards():
+    try:
+        response = requests.get('https://myanimelist.net/anime/season')
+        response.raise_for_status()
+    except requests.exceptions.RequestException as e:
+        st.error(f"Error fetching data: {e}")
+        return
 
-    html_text=requests.get('https://myanimelist.net/anime/season')
-    soup=BeautifulSoup(html_text.text,'html.parser') # instance of Beautiful Soup
-    anime_cards=soup.find_all('div',class_="js-anime-category-producer seasonal-anime js-seasonal-anime js-anime-type-all js-anime-type-1")
+    soup = BeautifulSoup(response.text, 'html.parser')
+    anime_cards = soup.find_all('div', class_="js-anime-category-producer seasonal-anime js-seasonal-anime js-anime-type-all js-anime-type-1")
 
-    # list to store the scraped data 
+    for card in anime_cards[:10]:  # Limit to top 10 anime
+        try:
+            anime_title = card.find('a', class_="link-title").text.strip()
+            rel_date = card.find('div', class_='info').span.text.strip()
+            click_to_watch_button = card.find('h2', class_='h2_anime_title').a['href']
+            ep_nos = card.select('div.info span.item')[1].text.strip().replace('\n', '')
+            genre_one = card.find('div', class_="genres-inner js-genre-inner").text.strip().replace('\n', '')
+            synopsis = card.find('div', class_="synopsis js-synopsis").p.text.strip()
+            click_video = card.find('a', class_='ga-click')['href']
 
-    for card in anime_cards:
-        anime_title=card.find('a',class_="link-title").text # name of the anime
-        rel_date=card.find('div',class_='info').span.text   # release data
-        click_to_watch_button=card.find('h2',class_='h2_anime_title').a['href'] # link for watching
-        ep_nos=card.select('div.info span.item')[1].text.replace('\n','') # ep. no. and duration
-        genre_one=card.find('div',class_="genres-inner js-genre-inner").text.replace('\n','') # genre
-        synopsis=card.find('div',class_="synopsis js-synopsis").p.text # synopsis
-        click_video=card.find('a',class_='ga-click')['href'] # link for watching the anime
+            # Fetch image URL
+            image_tag = card.find('img', class_='lazyload')
+            image_url = None  # Default to None if no image is found
+            if image_tag:
+                if 'data-src' in image_tag.attrs:
+                    image_url = image_tag['data-src']
+                elif 'src' in image_tag.attrs:
+                    image_url = image_tag['src']
 
-        #ep_nos=card.find_all('div',class_='info').span.span.text
-        #click_to_watch_button=card.header.h2.a['href']
-        #eng_title=card.find_all('h3',class_="h3_anime_subtitle").text
-        #genre_two=card.find('span',class_="genre")[1].a.text
+            curated_info.append((anime_title, rel_date, genre_one, ep_nos, synopsis, click_video, click_to_watch_button, image_url))
+
+        except AttributeError as e:
+            st.warning(f"Missing data for a card: {e}")
+            continue
+
+def convert_to_dataframe():
+    if not curated_info:
+        st.error("No data to convert.")
+        return pd.DataFrame()
+
+    df = pd.DataFrame(curated_info, columns=['Anime Title', 'Release Date', 'Genre', 'Episodes', 'Synopsis', 'Video Link', 'More Info', 'Image URL'])
+    df['Release Date'] = pd.to_datetime(df['Release Date'], errors='coerce')
+    return df
+
+# Streamlit UI
+st.title("Top 10 Seasonal Anime")
+
+# Button to scrape anime data
+if st.button('Fetch Top 10 Anime'):
+    curated_info.clear()  # Clear old data
+    curate_anime_cards()
+    df = convert_to_dataframe()
+
+    if not df.empty:
+        st.write("Top 10 Anime This Season")
         
-        
-        # appending all the scraped info. into list
-        curated_info.append((anime_title,rel_date,genre_one,ep_nos,synopsis,click_video,click_to_watch_button))
-
-        #printing all the scraped info.
-        print(f"\n anime title: {anime_title}")
-        print(f"release date : {rel_date}")
-        print(f"genre: {genre_one}")
-
-        #print(f"english title: {eng_title}")
-        # genre=card.select('div span.genre').text
-        # texts=[genre.text for g in genre]
-        # print(texts[0:2])
-        #print(f"{genre_two}")
-    
-        if '?' in ep_nos:
-            print("looks like this anime is ongoing!you are just in time ;)")
-            print(f"no of eps and duration of 1 ep: {ep_nos}")
-        else:
-            print(f"no of eps and duration of 1 ep: {ep_nos}")
-        
-        print(f"synopsis:{synopsis}")
-        print(f"click to watch the anime-->{click_video}")
-        print(f"here is the link to find more about the anime: {click_to_watch_button}")
-
-    
-inst=curate_anime_cards()
-def convert_to_tabular_structure():
-    df = pd.DataFrame(curated_info, columns=['anime title', 'release_date', 'genre', 'ep_nos.','synopsis','video_link','more_info.'])
-    df['release_date'] = pd.to_datetime(df['release_date'])
-    print(df.head())
-    df.to_csv('top seasonal anime .csv', index=False, encoding='utf-8')
-
-
-if __name__=='__main__': 
-    while True:  
-        curate_anime_cards()
-        convert_to_tabular_structure()
-        time_wait=10 # change wait time as you want
-        print(f"waiting for {time_wait} minutes")
-        time.sleep(time_wait*60)
-
-    
+        # Display each anime with details and image
+        for i, row in df.iterrows():
+            st.subheader(row['Anime Title'])
+            if row['Image URL']:
+                st.image(row['Image URL'], caption=row['Anime Title'], use_column_width=True)
+            else:
+                st.write("No image available")
+            st.write(f"Release Date: {row['Release Date']}")
+            st.write(f"Genre: {row['Genre']}")
+            st.write(f"Episodes: {row['Episodes']}")
+            st.write(f"Synopsis: {row['Synopsis']}")
+            st.markdown(f"[Watch Here]({row['Video Link']})")
+            st.markdown(f"[More Info]({row['More Info']})")
+else:
+    st.write("Click the button to fetch the top 10 anime.")
